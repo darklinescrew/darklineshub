@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Darklines Crew — Services</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Clash+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#161616;--surface2:#1e1e1e;--border:#2a2a2a;
+  --accent:#e8ff47;--accent2:#ff6b35;--text:#f2f2f2;--muted:#666;
+  --green:#3dff8f;--red:#ff4d6d;--radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:999}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(13,13,13,0.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between}
+.topbar-logo{font-family:'Clash Display',sans-serif;font-size:17px;font-weight:700;letter-spacing:-0.01em;display:flex;align-items:center;gap:10px}
+.logo-pill{background:var(--accent);color:#000;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;padding:3px 8px;border-radius:20px;letter-spacing:0.1em;text-transform:uppercase}
+.discord-btn{display:inline-flex;align-items:center;gap:8px;background:#5865F2;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all 0.2s}
+.discord-btn:hover{opacity:0.85;transform:translateY(-1px)}
+.discord-btn svg{width:16px;height:16px;fill:#fff;flex-shrink:0}
+
+/* HERO */
+.hero{padding:80px 32px 56px;max-width:900px;margin:0 auto;text-align:center}
+.hero-eyebrow{font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:var(--accent);margin-bottom:18px}
+.hero-title{font-family:'Clash Display',sans-serif;font-size:clamp(32px,5vw,52px);font-weight:700;letter-spacing:-0.02em;line-height:1.08;margin-bottom:16px}
+.hero-title span{color:var(--accent)}
+.hero-sub{font-size:12px;color:var(--muted);line-height:1.8;max-width:460px;margin:0 auto 36px}
+.hero-stats{display:flex;gap:32px;justify-content:center;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat-val{font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;color:var(--text)}
+.hero-stat-val.green{color:var(--green)}
+.hero-stat-label{font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+
+/* DIVIDER */
+.divider{border:none;border-top:1px solid var(--border);margin:0}
+
+/* SKILLS SECTION */
+.skills-section{padding:48px 32px;max-width:900px;margin:0 auto}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.section-label{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted)}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.2s}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+.filter-btn.active{background:rgba(232,255,71,0.08);border-color:var(--accent);color:var(--accent)}
+
+/* SKILL CARDS GRID */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.skill-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;transition:border-color 0.2s,transform 0.2s;position:relative;overflow:hidden}
+.skill-card:hover{border-color:rgba(232,255,71,0.3);transform:translateY(-2px)}
+.skill-card.available::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green)}
+.skill-card.unavailable::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--border)}
+.skill-name{font-family:'Clash Display',sans-serif;font-size:15px;font-weight:600;letter-spacing:-0.01em;color:var(--text)}
+.skill-status{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;font-weight:500}
+.skill-status.available{color:var(--green)}
+.skill-status.unavailable{color:var(--muted)}
+.skill-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.skill-dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
+.skill-dot.grey{background:var(--muted)}
+.skill-devs-count{font-size:10px;color:var(--muted)}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:60px;color:var(--muted);font-size:11px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px;color:var(--muted);font-size:11px}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:32px;text-align:center;font-size:10px;color:var(--muted);letter-spacing:0.08em}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
+
+/* MOBILE */
+@media(max-width:600px){
+  .topbar{padding:0 20px}
+  .hero{padding:48px 20px 40px}
+  .skills-section{padding:32px 20px}
+  .skills-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    ⚡ Darklines <span class="logo-pill">Crew</span>
+  </div>
+  <a class="discord-btn" href="https://discord.gg/PGVQMZJVBd" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+    Join Discord
+  </a>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Developer Agency</div>
+  <h1 class="hero-title">Skills available<br>from <span>Darklines Crew</span></h1>
+  <p class="hero-sub">Browse what our developers can do. Green means we have someone available right now.</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val" id="stat-total">—</div>
+      <div class="hero-stat-label">Skills offered</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val green" id="stat-avail">—</div>
+      <div class="hero-stat-label">Available now</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val" id="stat-devs">—</div>
+      <div class="hero-stat-label">Developers</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- SKILLS -->
+<div class="skills-section">
+  <div class="section-header">
+    <div class="section-label">All Skills</div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-btn" onclick="setFilter('available', this)">Available</button>
+      <button class="filter-btn" onclick="setFilter('unavailable', this)">Unavailable</button>
+    </div>
+  </div>
+  <div id="skills-container">
+    <div class="loading"><div class="spinner"></div> Loading skills...</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div style="margin-bottom:12px">
+    <a href="https://discord.gg/PGVQMZJVBd" target="_blank">Join our Discord</a>
+    <span style="margin:0 12px;opacity:0.3">·</span>
+    <span>Darklines Crew © 2025</span>
+  </div>
+  <div style="opacity:0.4">Skills update in real time from our crew hub.</div>
+</footer>
+
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyAwqgrKmmouf5M-633nNd5J_4A_1aymetI",
+  authDomain: "darklinescrew.firebaseapp.com",
+  projectId: "darklinescrew",
+  storageBucket: "darklinescrew.firebasestorage.app",
+  messagingSenderId: "182538627323",
+  appId: "1:182538627323:web:eb7340baacf7f61b60285e"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+var allSkillsData = []; // [{name, available, availableCount, totalCount}]
+var currentFilter = 'all';
+
+function loadSkills() {
+  db.collection("developers").get().then(function(snapshot) {
+    var devs = [];
+    snapshot.forEach(function(doc) { devs.push(doc.data()); });
+
+    // Build skill map: skillName -> { availableCount, totalCount }
+    var skillMap = {};
+    for (var i = 0; i < devs.length; i++) {
+      var dev = devs[i];
+      var skills = dev.skills || [];
+      for (var j = 0; j < skills.length; j++) {
+        var s = skills[j].trim();
+        if (!s) continue;
+        if (!skillMap[s]) skillMap[s] = { availableCount: 0, totalCount: 0 };
+        skillMap[s].totalCount++;
+        if (dev.available) skillMap[s].availableCount++;
+      }
+    }
+
+    // Convert to array, sort: available first, then alpha
+    allSkillsData = [];
+    var keys = Object.keys(skillMap);
+    keys.sort(function(a, b) {
+      var aAvail = skillMap[a].availableCount > 0 ? 1 : 0;
+      var bAvail = skillMap[b].availableCount > 0 ? 1 : 0;
+      if (bAvail !== aAvail) return bAvail - aAvail;
+      return a.localeCompare(b);
+    });
+    for (var k = 0; k < keys.length; k++) {
+      allSkillsData.push({
+        name: keys[k],
+        available: skillMap[keys[k]].availableCount > 0,
+        availableCount: skillMap[keys[k]].availableCount,
+        totalCount: skillMap[keys[k]].totalCount
+      });
+    }
+
+    // Stats
+    var availSkills = allSkillsData.filter(function(s){ return s.available; }).length;
+    document.getElementById("stat-total").textContent = allSkillsData.length;
+    document.getElementById("stat-avail").textContent = availSkills;
+    document.getElementById("stat-devs").textContent = devs.length;
+
+    renderSkills();
+  }).catch(function(err) {
+    document.getElementById("skills-container").innerHTML = '<div class="empty">Failed to load skills. Please try again.</div>';
+    console.error(err);
+  });
+}
+
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  renderSkills();
+}
+
+function renderSkills() {
+  var filtered = allSkillsData.filter(function(s) {
+    if (currentFilter === 'available') return s.available;
+    if (currentFilter === 'unavailable') return !s.available;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById("skills-container").innerHTML = '<div class="empty">No skills found.</div>';
+    return;
+  }
+
+  var html = '<div class="skills-grid">';
+  for (var i = 0; i < filtered.length; i++) {
+    var s = filtered[i];
+    var statusClass = s.available ? 'available' : 'unavailable';
+    var dotClass = s.available ? 'green' : 'grey';
+    var statusText = s.available ? 'Available' : 'Unavailable';
+    var devsText = s.availableCount + ' of ' + s.totalCount + ' dev' + (s.totalCount !== 1 ? 's' : '') + ' available';
+    html += '<div class="skill-card ' + statusClass + '">'
+      + '<div class="skill-name">' + escHtml(s.name) + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:6px">'
+      + '<div class="skill-status ' + statusClass + '"><div class="skill-dot ' + dotClass + '"></div>' + statusText + '</div>'
+      + '<div class="skill-devs-count">' + devsText + '</div>'
+      + '</div>'
+      + '</div>';
+  }
+  html += '</div>';
+  document.getElementById("skills-container").innerHTML = html;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+loadSkills();
+</script>
+</body>
+</html>
