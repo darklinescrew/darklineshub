@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Darklines Crew — Dev Status</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Clash+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d0d;--surface:#161616;--surface2:#1e1e1e;--border:#2a2a2a;
+  --accent:#e8ff47;--accent2:#ff6b35;--text:#f2f2f2;--muted:#666;
+  --green:#3dff8f;--red:#ff4d6d;--radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:999}
+.page{display:none;min-height:100vh}
+.page.active{display:block}
+#login-page{display:none;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+#login-page.active{display:flex}
+.login-box{width:100%;max-width:380px}
+.login-logo{margin-bottom:40px}
+.login-logo h1{font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;letter-spacing:-0.02em;color:var(--text);display:flex;align-items:center;gap:10px}
+.logo-pill{background:var(--accent);color:#000;font-family:'DM Mono',monospace;font-size:9px;font-weight:500;padding:3px 8px;border-radius:20px;letter-spacing:0.1em;text-transform:uppercase}
+.login-logo p{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:0.05em}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.form-group label{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted)}
+.form-group input{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;width:100%}
+.form-group input:focus{border-color:var(--accent)}
+.btn{width:100%;padding:14px;border:none;border-radius:var(--radius);font-family:'DM Mono',monospace;font-size:12px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;margin-top:6px}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{opacity:0.85;transform:translateY(-1px)}
+.btn-danger{background:rgba(255,77,109,0.1);color:var(--red);border:1px solid rgba(255,77,109,0.2);width:auto;padding:8px 14px;font-size:11px}
+.btn-danger:hover{background:rgba(255,77,109,0.2)}
+.btn-sm{width:auto;padding:8px 14px;font-size:11px;margin-top:0}
+.login-error{font-size:11px;color:var(--red);margin-top:10px;text-align:center;height:16px}
+#main-page{display:none}
+#main-page.active{display:block}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(13,13,13,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{font-family:'Clash Display',sans-serif;font-size:16px;font-weight:700;letter-spacing:-0.01em;color:var(--text)}
+.topbar-user{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.user-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:10px;color:var(--text);letter-spacing:0.05em}
+.admin-badge{background:rgba(232,255,71,0.1);border-color:rgba(232,255,71,0.3);color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.logout-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:7px 12px;border-radius:6px;cursor:pointer;transition:all 0.2s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+.tab-nav{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 24px;background:var(--bg)}
+.tab-btn{background:none;border:none;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:14px 20px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;margin-bottom:-1px}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.content{padding:32px 24px;max-width:900px;margin:0 auto}
+.self-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:24px;position:relative;overflow:hidden}
+.self-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.self-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.self-name{font-family:'Clash Display',sans-serif;font-size:22px;font-weight:600;letter-spacing:-0.01em}
+.status-toggle{display:flex;align-items:center;gap:12px}
+.toggle-label{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.toggle-switch{position:relative;width:52px;height:28px}
+.toggle-switch input{display:none}
+.toggle-track{position:absolute;inset:0;background:var(--surface2);border:1px solid var(--border);border-radius:20px;cursor:pointer;transition:all 0.3s}
+.toggle-track::after{content:'';position:absolute;top:4px;left:4px;width:18px;height:18px;background:var(--muted);border-radius:50%;transition:all 0.3s}
+input:checked + .toggle-track{background:rgba(61,255,143,0.15);border-color:rgba(61,255,143,0.4)}
+input:checked + .toggle-track::after{transform:translateX(24px);background:var(--green)}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.dot-green{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot-red{background:var(--red);box-shadow:0 0 8px var(--red)}
+.status-text-available{color:var(--green);font-size:12px}
+.status-text-unavailable{color:var(--red);font-size:12px}
+.status-msg-row{display:flex;gap:10px;align-items:center;margin-top:16px}
+.status-msg-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);outline:none;transition:border-color 0.2s}
+.status-msg-input:focus{border-color:var(--accent)}
+.status-msg-input::placeholder{color:var(--muted)}
+.save-btn{background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 16px;font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.05em;cursor:pointer;transition:opacity 0.2s;white-space:nowrap}
+.save-btn:hover{opacity:0.8}
+.section-title{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.crew-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.dev-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color 0.2s;position:relative}
+.dev-card:hover{border-color:#3a3a3a}
+.dev-card.available{border-left:3px solid var(--green)}
+.dev-card.unavailable{border-left:3px solid var(--red)}
+.dev-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.dev-card-name{font-family:'Clash Display',sans-serif;font-size:16px;font-weight:600;letter-spacing:-0.01em}
+.dev-status-badge{font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.badge-available{background:rgba(61,255,143,0.1);color:var(--green);border:1px solid rgba(61,255,143,0.2)}
+.badge-unavailable{background:rgba(255,77,109,0.1);color:var(--red);border:1px solid rgba(255,77,109,0.2)}
+.dev-card-msg{font-size:11px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-style:italic}
+.skills-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.skill-tag{background:rgba(232,255,71,0.07);border:1px solid rgba(232,255,71,0.15);color:var(--accent);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px}
+.skill-tag-removable{background:rgba(232,255,71,0.07);border:1px solid rgba(232,255,71,0.15);color:var(--accent);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:20px;display:flex;align-items:center;gap:6px}
+.skill-remove{cursor:pointer;color:var(--muted);font-size:11px;line-height:1;transition:color 0.2s}
+.skill-remove:hover{color:var(--red)}
+.admin-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+.admin-section-title{font-family:'Clash Display',sans-serif;font-size:16px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.admin-section-title span{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0.1em}
+.add-dev-form{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.add-dev-form .form-group{flex:1;min-width:150px;margin-bottom:0}
+.dev-table{width:100%;border-collapse:collapse}
+.dev-table th{text-align:left;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);padding:0 0 12px 0;border-bottom:1px solid var(--border)}
+.dev-table td{padding:14px 0;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.dev-table tr:last-child td{border-bottom:none}
+.dev-table .actions{display:flex;gap:8px;justify-content:flex-end}
+.empty-state{text-align:center;padding:40px;color:var(--muted);font-size:12px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:12px;color:var(--text);z-index:1000;transform:translateY(80px);opacity:0;transition:all 0.3s;pointer-events:none}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(61,255,143,0.3);color:var(--green)}
+.toast.error{border-color:rgba(255,77,109,0.3);color:var(--red)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:500;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:380px}
+.modal h3{font-family:'Clash Display',sans-serif;font-size:18px;font-weight:600;margin-bottom:20px}
+.modal-actions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;padding:9px 16px;border-radius:8px;cursor:pointer;transition:all 0.2s;letter-spacing:0.05em}
+.btn-ghost:hover{border-color:var(--text);color:var(--text)}
+.counter-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:border-color 0.2s}
+.counter-btn:hover{border-color:var(--accent)}
+.card-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.card-stat{display:flex;flex-direction:column;gap:3px;align-items:center}
+.stat-label{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)}
+.stat-val{font-size:15px;font-weight:600;font-family:'Clash Display',sans-serif;color:var(--text)}
+.counter-btn:hover{border-color:var(--accent)}
+.globals-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.global-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:4px}
+.global-card-label{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+.global-card-val{font-family:'Clash Display',sans-serif;font-size:26px;font-weight:700;color:var(--text)}
+.global-card-val.accent{color:var(--accent)}
+.global-card-val.green{color:var(--green)}
+.global-card-val.red{color:var(--red)}
+.leaderboard-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+.leaderboard-title{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.lb-row:last-child{border-bottom:none}
+.lb-pos{font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;color:var(--muted);min-width:28px}
+.lb-pos.gold{color:#f59e0b}.lb-pos.silver{color:#9ca3af}.lb-pos.bronze{color:#b45309}
+.lb-name{flex:1;font-size:13px;font-weight:500}
+.lb-score{font-family:'Clash Display',sans-serif;font-size:16px;font-weight:700;color:var(--accent)}
+.lb-type{font-size:9px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase}
+.log-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+.log-title{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.log-entry{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:11px}
+.log-entry:last-child{border-bottom:none}
+.log-dot{width:6px;height:6px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.log-dot.green{background:var(--green)}.log-dot.red{background:var(--red)}.log-dot.accent{background:var(--accent)}.log-dot.blue{background:#3b82f6}
+.log-text{flex:1;color:var(--text);line-height:1.5}
+.log-time{color:var(--muted);font-size:10px;white-space:nowrap}
+.unavail-until{font-size:10px;color:var(--red);margin-top:2px}
+.unavail-input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);outline:none;transition:border-color 0.2s;width:100%}
+.unavail-input:focus{border-color:var(--accent)}
+@media(max-width:600px){.globals-bar{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){
+  .topbar{padding:0 16px}.content{padding:20px 16px}
+  .tab-nav{padding:0 16px;overflow-x:auto}.tab-btn{padding:14px 14px;font-size:10px}
+  .add-dev-form{flex-direction:column}.add-dev-form .btn{width:100%;margin-top:6px}
+}
+</style>
+</head>
+<body>
+
+<!-- ADBLOCK OVERLAY -->
+<div id="adblock-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;max-width:400px;width:90%;text-align:center">
+    <div style="font-size:32px;margin-bottom:16px">🚫</div>
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;font-family:'Clash Display',sans-serif">AdBlocker Detected</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:24px;line-height:1.8">This site uses Firebase to store data.<br>Your AdBlocker is blocking the connection.<br><br>Please disable it for this site and refresh.</div>
+    <button onclick="location.reload()" style="background:var(--accent);color:#000;border:none;padding:12px 24px;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;width:100%;letter-spacing:0.05em">↻ REFRESH AFTER DISABLING</button>
+  </div>
+</div>
+
+<!-- LOGIN PAGE -->
+<div id="login-page" class="page">
+  <div class="login-box">
+    <div class="login-logo">
+      <h1>Darklines <span class="logo-pill">Crew</span></h1>
+      <p>developer portal · sign in to continue</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="your username" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="your password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign in →</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- MAIN PAGE -->
+<div id="main-page" class="page">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">Darklines</div>
+      <div class="topbar-user">
+        <span class="user-badge" id="topbar-username"></span>
+        <span class="user-badge admin-badge" id="topbar-admin-badge" style="display:none">admin</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="logout-btn" onclick="doLogout()">sign out</button>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tab-status" onclick="switchTab('status')">My Status</button>
+    <button class="tab-btn" id="tab-crew" onclick="switchTab('crew')">Crew</button>
+    <button class="tab-btn" id="tab-leaderboard" onclick="switchTab('leaderboard')">Leaderboard</button>
+    <button class="tab-btn" id="tab-log" onclick="switchTab('log')">Activity Log</button>
+    <button class="tab-btn" id="tab-admin" onclick="switchTab('admin')" style="display:none">Admin</button>
+    <button class="tab-btn" id="tab-stats" onclick="switchTab('stats')" style="display:none">Stats</button>
+  </div>
+
+  <!-- STATUS TAB -->
+  <div class="content" id="view-status">
+    <div class="self-card">
+      <div class="self-card-header">
+        <div>
+          <div class="self-name" id="self-name"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" id="self-rank"></div>
+        </div>
+        <div class="status-toggle">
+          <span class="toggle-label" id="toggle-label-text"></span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="availability-toggle" onchange="toggleAvailability()">
+            <div class="toggle-track"></div>
+          </label>
+        </div>
+      </div>
+      <div class="status-msg-row">
+        <input type="text" class="status-msg-input" id="status-msg" placeholder="optional status message (e.g. busy until Friday)" maxlength="80">
+        <button class="save-btn" onclick="saveStatusMsg()">Save</button>
+      </div>
+      <div id="unavail-row" style="margin-top:12px;display:none">
+        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Unavailable until</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input type="date" class="unavail-input" id="unavail-until" onchange="saveUnavailUntil()">
+          <button class="save-btn" onclick="clearUnavailUntil()" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border)">Clear</button>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Skills</div>
+        <div class="skills-row" id="self-skills-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM TAB -->
+  <div class="content" id="view-crew" style="display:none">
+    <div class="globals-bar" id="globals-bar"></div>
+    <div class="section-title">All Crew</div>
+    <div class="crew-grid" id="crew-grid"></div>
+  </div>
+
+  <!-- LEADERBOARD TAB -->
+  <div class="content" id="view-leaderboard" style="display:none">
+    <div class="globals-bar" id="globals-bar-lb"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="lb-grid">
+      <div class="leaderboard-card">
+        <div class="leaderboard-title">Top Clients Brought</div>
+        <div id="lb-clients"></div>
+      </div>
+      <div class="leaderboard-card">
+        <div class="leaderboard-title">Top Comms</div>
+        <div id="lb-comms"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY LOG TAB -->
+  <div class="content" id="view-log" style="display:none">
+    <div class="log-card">
+      <div class="log-title">Activity Log</div>
+      <div id="log-list"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN TAB -->
+  <div class="content" id="view-admin" style="display:none">
+    <div class="admin-section">
+      <div class="admin-section-title">Add Developer <span>new account</span></div>
+      <div class="add-dev-form">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="new-username" placeholder="username" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="new-password" placeholder="password">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addDeveloper()">Add →</button>
+      </div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-section-title">Manage Developers <span>all accounts</span></div>
+      <table class="dev-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Skills</th>
+            <th>Status</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="admin-dev-list"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div class="content" id="view-stats" style="display:none">
+    <div class="admin-section">
+      <div class="admin-section-title">Developer Stats <span>rank · comms · violations</span></div>
+      <table class="dev-table">
+        <thead>
+          <tr>
+            <th>Developer</th>
+            <th>Rank</th>
+            <th>Comms</th>
+            <th>Clients</th>
+            <th>Violations</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="stats-list"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal" style="max-width:440px">
+    <h3>Edit Developer</h3>
+    <input type="hidden" id="edit-target-user">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="edit-username" placeholder="username" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label>New Password <span style="color:var(--muted);font-size:10px">(leave blank to keep)</span></label>
+      <input type="password" id="edit-password" placeholder="new password">
+    </div>
+    <div class="form-group">
+      <label>Skills</label>
+      <div class="skills-row" id="edit-skills-list" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" class="status-msg-input" id="edit-skill-input" placeholder="add a skill" maxlength="30" onkeydown="if(event.key==='Enter')addEditSkill()">
+        <button class="save-btn" onclick="addEditSkill()">+ Add</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeEditModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmEdit()">Save →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// FIREBASE
+// ════════════════════════════════════════
+var firebaseConfig = {
+  apiKey: "AIzaSyAwqgrKmmouf5M-633nNd5J_4A_1aymetI",
+  authDomain: "darklinescrew.firebaseapp.com",
+  projectId: "darklinescrew",
+  storageBucket: "darklinescrew.firebasestorage.app",
+  messagingSenderId: "182538627323",
+  appId: "1:182538627323:web:eb7340baacf7f61b60285e"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+
+// ════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════
+var RANKS = ["Crew Junior","Crew Rookie","Crew Member","Crew Prime","Crew Veteran"];
+var RANK_COLORS = {
+  "Crew Junior":  "#6b7280",
+  "Crew Rookie":  "#3b82f6",
+  "Crew Member":  "#8b5cf6",
+  "Crew Prime":   "#f59e0b",
+  "Crew Veteran": "#ef4444"
+};
+
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+var DB = { developers: [] };
+var currentUser = null;
+
+// ════════════════════════════════════════
+// FIREBASE HELPERS
+// ════════════════════════════════════════
+function loadDB(callback) {
+  db.collection("developers").get().then(function(snapshot) {
+    DB.developers = [];
+    snapshot.forEach(function(d) { DB.developers.push(d.data()); });
+    if (DB.developers.length === 0) {
+      var admin = {
+        username: "polamenein", password: "admin123",
+        isAdmin: true, available: true, statusMsg: "",
+        skills: [], rank: "Crew Veteran", comms: 0, violations: 0, clients: 0
+      };
+      db.collection("developers").doc("polamenein").set(admin).then(function() {
+        DB.developers.push(admin);
+        callback();
+      });
+    } else {
+      callback();
+    }
+  }).catch(function(e) {
+    console.error(e);
+    showToast("Error loading data", "error");
+  });
+}
+
+function saveDev(dev, callback) {
+  db.collection("developers").doc(dev.username).set(dev).then(function() {
+    if (callback) callback();
+  }).catch(function(e) {
+    console.error(e);
+    showToast("Error saving", "error");
+  });
+}
+
+function deleteDev(username, callback) {
+  db.collection("developers").doc(username).delete().then(function() {
+    if (callback) callback();
+  }).catch(function(e) {
+    console.error(e);
+  });
+}
+
+// ════════════════════════════════════════
+// AUTH
+// ════════════════════════════════════════
+function doLogin() {
+  var username = document.getElementById("login-user").value.trim();
+  var password = document.getElementById("login-pass").value;
+  var errEl = document.getElementById("login-error");
+  errEl.textContent = "";
+  var dev = null;
+  for (var i = 0; i < DB.developers.length; i++) {
+    if (DB.developers[i].username === username && DB.developers[i].password === password) {
+      dev = DB.developers[i]; break;
+    }
+  }
+  if (!dev) {
+    errEl.textContent = "incorrect username or password";
+    document.getElementById("login-pass").value = "";
+    return;
+  }
+  currentUser = dev;
+  sessionStorage.setItem("dl_user", username);
+  showMainPage();
+}
+
+function doLogout() {
+  currentUser = null;
+  sessionStorage.removeItem("dl_user");
+  document.getElementById("main-page").classList.remove("active");
+  document.getElementById("login-page").classList.add("active");
+  document.getElementById("login-user").value = "";
+  document.getElementById("login-pass").value = "";
+}
+
+// ════════════════════════════════════════
+// MAIN PAGE
+// ════════════════════════════════════════
+function showMainPage() {
+  document.getElementById("login-page").classList.remove("active");
+  document.getElementById("main-page").classList.add("active");
+  document.getElementById("topbar-username").textContent = currentUser.username;
+  if (currentUser.isAdmin) {
+    document.getElementById("topbar-admin-badge").style.display = "inline";
+    document.getElementById("tab-admin").style.display = "inline-block";
+    document.getElementById("tab-stats").style.display = "inline-block";
+  } else {
+    document.getElementById("topbar-admin-badge").style.display = "none";
+    document.getElementById("tab-admin").style.display = "none";
+    document.getElementById("tab-stats").style.display = "none";
+  }
+  renderSelfStatus();
+  switchTab("status");
+}
+
+// ════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════
+function switchTab(tab) {
+  var tabs = ["status","crew","leaderboard","log","admin","stats"];
+  for (var i = 0; i < tabs.length; i++) {
+    var v = document.getElementById("view-" + tabs[i]);
+    var b = document.getElementById("tab-" + tabs[i]);
+    if (v) v.style.display = tabs[i] === tab ? "block" : "none";
+    if (b) { b.classList.remove("active"); if (tabs[i] === tab) b.classList.add("active"); }
+  }
+  if (tab === "crew") { renderTeam(); renderGlobals("globals-bar"); }
+  if (tab === "leaderboard") { renderLeaderboard(); renderGlobals("globals-bar-lb"); }
+  if (tab === "log") renderLog();
+  if (tab === "admin") renderAdminPanel();
+  if (tab === "stats") renderStats();
+}
+
+// ════════════════════════════════════════
+// STATUS TAB
+// ════════════════════════════════════════
+function getDev(username) {
+  for (var i = 0; i < DB.developers.length; i++) {
+    if (DB.developers[i].username === username) return DB.developers[i];
+  }
+  return null;
+}
+
+function renderSelfStatus() {
+  var dev = getDev(currentUser.username);
+  if (!dev) return;
+  currentUser = dev;
+  document.getElementById("self-name").textContent = dev.username;
+  var rankEl = document.getElementById("self-rank");
+  if (dev.rank) {
+    rankEl.textContent = dev.rank;
+    rankEl.style.color = RANK_COLORS[dev.rank] || "var(--muted)";
+    rankEl.style.fontWeight = "600";
+  } else {
+    rankEl.textContent = "";
+  }
+  var toggle = document.getElementById("availability-toggle");
+  toggle.checked = dev.available;
+  updateToggleLabel(dev.available);
+  document.getElementById("status-msg").value = dev.statusMsg || "";
+  var unavailRow = document.getElementById("unavail-row");
+  var unavailInput = document.getElementById("unavail-until");
+  if (!dev.available) {
+    unavailRow.style.display = "block";
+    unavailInput.value = dev.unavailUntil || "";
+  } else {
+    unavailRow.style.display = "none";
+    unavailInput.value = "";
+  }
+  renderSelfSkills();
+}
+
+function updateToggleLabel(available) {
+  var el = document.getElementById("toggle-label-text");
+  if (available) {
+    el.innerHTML = '<span class="status-dot dot-green"></span><span class="status-text-available">Available</span>';
+  } else {
+    el.innerHTML = '<span class="status-dot dot-red"></span><span class="status-text-unavailable">Not Available</span>';
+  }
+}
+
+function toggleAvailability() {
+  var toggle = document.getElementById("availability-toggle");
+  var dev = getDev(currentUser.username);
+  if (!dev) return;
+  dev.available = toggle.checked;
+  currentUser.available = toggle.checked;
+  updateToggleLabel(toggle.checked);
+  var unavailRow = document.getElementById("unavail-row");
+  if (!toggle.checked) {
+    unavailRow.style.display = "block";
+  } else {
+    unavailRow.style.display = "none";
+    dev.unavailUntil = "";
+    document.getElementById("unavail-until").value = "";
+  }
+  addLog(dev.username + (toggle.checked ? " is now available" : " went unavailable"), toggle.checked ? "green" : "red");
+  saveDev(dev, function() {
+    showToast(toggle.checked ? "✓ Now available" : "✓ Now unavailable", "success");
+  });
+}
+
+function saveUnavailUntil() {
+  var date = document.getElementById("unavail-until").value;
+  var dev = getDev(currentUser.username);
+  if (!dev) return;
+  dev.unavailUntil = date;
+  currentUser.unavailUntil = date;
+  saveDev(dev, function() { showToast("✓ Return date saved", "success"); });
+}
+
+function clearUnavailUntil() {
+  var dev = getDev(currentUser.username);
+  if (!dev) return;
+  dev.unavailUntil = "";
+  currentUser.unavailUntil = "";
+  document.getElementById("unavail-until").value = "";
+  saveDev(dev, function() { showToast("✓ Date cleared", "success"); });
+}
+
+function saveStatusMsg() {
+  var msg = document.getElementById("status-msg").value.trim();
+  var dev = getDev(currentUser.username);
+  if (!dev) return;
+  dev.statusMsg = msg;
+  currentUser.statusMsg = msg;
+  saveDev(dev, function() { showToast("✓ Status message saved", "success"); });
+}
+
+function renderSelfSkills() {
+  var dev = getDev(currentUser.username);
+  var container = document.getElementById("self-skills-list");
+  var skills = dev.skills || [];
+  if (skills.length === 0) {
+    container.innerHTML = '<span style="font-size:11px;color:var(--muted)">No skills added yet. Ask an admin to add skills.</span>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < skills.length; i++) {
+    html += '<span class="skill-tag">' + skills[i] + '</span>';
+  }
+  container.innerHTML = html;
+}
+
+function addSkill() {
+  var input = document.getElementById("new-skill-input");
+  var skill = input.value.trim();
+  if (!skill) return;
+  var dev = getDev(currentUser.username);
+  if (!dev.skills) dev.skills = [];
+  for (var i = 0; i < dev.skills.length; i++) {
+    if (dev.skills[i] === skill) { showToast("Skill already added", "error"); return; }
+  }
+  dev.skills.push(skill);
+  input.value = "";
+  saveDev(dev, function() { renderSelfSkills(); showToast("✓ Skill added", "success"); });
+}
+
+function removeSkill(index) {
+  var dev = getDev(currentUser.username);
+  if (!dev.skills) return;
+  dev.skills.splice(index, 1);
+  saveDev(dev, function() { renderSelfSkills(); showToast("✓ Skill removed", "success"); });
+}
+
+// ════════════════════════════════════════
+// GLOBALS BAR
+// ════════════════════════════════════════
+function renderGlobals(containerId) {
+  var devs = DB.developers;
+  var totalComms = 0, totalClients = 0, totalActive = 0, totalViolations = 0;
+  for (var i = 0; i < devs.length; i++) {
+    totalComms += devs[i].comms || 0;
+    totalClients += devs[i].clients || 0;
+    totalViolations += devs[i].violations || 0;
+    if (devs[i].available) totalActive++;
+  }
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '<div class="global-card"><div class="global-card-label">Members</div><div class="global-card-val green">' + devs.length + '</div></div>'
+    + '<div class="global-card"><div class="global-card-label">Active Now</div><div class="global-card-val green">' + totalActive + '</div></div>'
+    + '<div class="global-card"><div class="global-card-label">Total Clients</div><div class="global-card-val accent">' + totalClients + '</div></div>'
+    + '<div class="global-card"><div class="global-card-label">Total Comms</div><div class="global-card-val">' + totalComms + '</div></div>';
+}
+
+// ════════════════════════════════════════
+// LEADERBOARD TAB
+// ════════════════════════════════════════
+function renderLeaderboard() {
+  var devs = DB.developers.slice();
+  function lbRows(sorted, field) {
+    if (sorted.length === 0) return '<div style="color:var(--muted);font-size:11px;padding:10px 0">No data yet.</div>';
+    var html = '';
+    var posClasses = ['gold','silver','bronze'];
+    for (var i = 0; i < sorted.length; i++) {
+      var posClass = i < 3 ? posClasses[i] : '';
+      var medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1) + '.';
+      html += '<div class="lb-row">'
+        + '<div class="lb-pos ' + posClass + '">' + medal + '</div>'
+        + '<div class="lb-name">' + sorted[i].username + (sorted[i].rank ? ' <span style="font-size:10px;color:' + (RANK_COLORS[sorted[i].rank]||'#6b7280') + '">' + sorted[i].rank + '</span>' : '') + '</div>'
+        + '<div><div class="lb-score">' + (sorted[i][field]||0) + '</div><div class="lb-type">' + field + '</div></div>'
+        + '</div>';
+    }
+    return html;
+  }
+  var byClients = devs.slice().sort(function(a,b){ return (b.clients||0)-(a.clients||0); });
+  var byComms = devs.slice().sort(function(a,b){ return (b.comms||0)-(a.comms||0); });
+  document.getElementById("lb-clients").innerHTML = lbRows(byClients, "clients");
+  document.getElementById("lb-comms").innerHTML = lbRows(byComms, "comms");
+}
+
+// ════════════════════════════════════════
+// ACTIVITY LOG
+// ════════════════════════════════════════
+var activityLog = [];
+
+function addLog(text, type) {
+  var now = new Date();
+  var timeStr = now.toLocaleDateString('pt-PT') + ' ' + now.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
+  activityLog.unshift({ text: text, type: type || 'accent', time: timeStr });
+  if (activityLog.length > 50) activityLog.pop();
+  // persist in Firestore
+  db.collection("meta").doc("activityLog").set({ entries: activityLog });
+}
+
+function loadLog(callback) {
+  db.collection("meta").doc("activityLog").get().then(function(doc) {
+    if (doc.exists && doc.data().entries) {
+      activityLog = doc.data().entries;
+    }
+    if (callback) callback();
+  }).catch(function() { if (callback) callback(); });
+}
+
+function renderLog() {
+  var el = document.getElementById("log-list");
+  if (activityLog.length === 0) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:10px 0">No activity yet.</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < activityLog.length; i++) {
+    var e = activityLog[i];
+    html += '<div class="log-entry"><div class="log-dot ' + e.type + '"></div><div class="log-text">' + e.text + '</div><div class="log-time">' + e.time + '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// TEAM TAB
+// ════════════════════════════════════════
+function renderTeam() {
+  var grid = document.getElementById("crew-grid");
+  var devs = DB.developers;
+  if (devs.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No developers yet.</div>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < devs.length; i++) {
+    var dev = devs[i];
+    var rankHtml = dev.rank ? '<div style="font-size:11px;font-weight:600;color:' + (RANK_COLORS[dev.rank] || "#6b7280") + ';margin-top:2px">' + dev.rank + '</div>' : '';
+    var badgeClass = dev.available ? "badge-available" : "badge-unavailable";
+    var badgeText = dev.available ? "available" : "unavailable";
+    var msgHtml = dev.statusMsg ? '<div class="dev-card-msg">"' + dev.statusMsg + '"</div>' : '';
+    var skillsHtml = '';
+    if (dev.skills && dev.skills.length) {
+      skillsHtml = '<div class="skills-row">';
+      for (var j = 0; j < dev.skills.length; j++) skillsHtml += '<span class="skill-tag">' + dev.skills[j] + '</span>';
+      skillsHtml += '</div>';
+    }
+    var comms = dev.comms || 0;
+    var violations = dev.violations || 0;
+    var clients = dev.clients || 0;
+    var violColor = violations > 0 ? '#ef4444' : 'var(--text)';
+    var rankColor = RANK_COLORS[dev.rank] || "#6b7280";
+    var line1 = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'
+      + '<div style="display:flex;align-items:center;gap:10px">'
+      + '<span class="dev-card-name">' + dev.username + '</span>'
+      + (dev.rank ? '<span style="font-size:11px;font-weight:600;color:' + rankColor + '">' + dev.rank + '</span>' : '')
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">'
+      + '<span style="font-size:11px;color:var(--muted)">Comms: <b style="color:var(--text)">' + comms + '</b></span>'
+      + '<span style="font-size:11px;color:var(--muted)">Clients Brought: <b style="color:var(--accent)">' + clients + '</b></span>'
+      + '<span style="font-size:11px;color:var(--muted)">Violations: <b style="color:' + violColor + '">' + violations + '</b></span>'
+      + '<span class="dev-status-badge ' + badgeClass + '">' + badgeText + '</span>'
+      + '</div>'
+      + '</div>';
+    var line2 = skillsHtml ? '<div style="margin-top:10px">' + skillsHtml + '</div>' : '';
+    var unavailUntilHtml = '';
+    if (!dev.available && dev.unavailUntil) {
+      var daysLeft = Math.ceil((new Date(dev.unavailUntil) - new Date()) / 86400000);
+      if (daysLeft > 0) unavailUntilHtml = '<div class="unavail-until" style="margin-top:6px">⏳ Returns in ' + daysLeft + ' day' + (daysLeft !== 1 ? 's' : '') + ' (' + dev.unavailUntil + ')</div>';
+    }
+    var line3 = (dev.statusMsg ? '<div class="dev-card-msg" style="margin-top:8px">"' + dev.statusMsg + '"</div>' : '') + unavailUntilHtml;
+    html += '<div class="dev-card ' + (dev.available ? 'available' : 'unavailable') + '">'
+      + line1 + line2 + line3
+      + '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+// ════════════════════════════════════════
+// ADMIN TAB
+// ════════════════════════════════════════
+function renderAdminPanel() {
+  var tbody = document.getElementById("admin-dev-list");
+  var devs = DB.developers;
+  if (devs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state">No developers.</div></td></tr>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < devs.length; i++) {
+    var dev = devs[i];
+    var skillsHtml = '<span style="color:var(--muted);font-size:11px">—</span>';
+    if (dev.skills && dev.skills.length) {
+      skillsHtml = '';
+      for (var j = 0; j < dev.skills.length; j++) skillsHtml += '<span class="skill-tag">' + dev.skills[j] + '</span>';
+    }
+    var adminLabel = dev.isAdmin ? ' <span style="color:var(--accent);font-size:10px">(admin)</span>' : '';
+    var removeBtn = !dev.isAdmin ? '<button class="btn-danger btn-sm" onclick="removeDeveloper(\'' + dev.username + '\')">remove</button>' : '';
+    html += '<tr>'
+      + '<td>' + dev.username + adminLabel + '</td>'
+      + '<td><div class="skills-row" style="flex-wrap:wrap;gap:4px">' + skillsHtml + '</div></td>'
+      + '<td><span class="dev-status-badge ' + (dev.available ? 'badge-available' : 'badge-unavailable') + '">' + (dev.available ? 'available' : 'unavailable') + '</span></td>'
+      + '<td><div class="actions"><button class="btn-ghost" onclick="openEditModal(\'' + dev.username + '\')">edit</button>' + removeBtn + '</div></td>'
+      + '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function addDeveloper() {
+  var username = document.getElementById("new-username").value.trim();
+  var password = document.getElementById("new-password").value;
+  if (!username || !password) { showToast("Username and password required", "error"); return; }
+  if (getDev(username)) { showToast("Username already exists", "error"); return; }
+  var newDev = {
+    username: username, password: password,
+    isAdmin: false, available: true, statusMsg: "",
+    skills: [], rank: "Crew Junior", comms: 0, violations: 0, clients: 0
+  };
+  DB.developers.push(newDev);
+  saveDev(newDev, function() {
+    document.getElementById("new-username").value = "";
+    document.getElementById("new-password").value = "";
+    renderAdminPanel();
+    showToast("✓ Developer added", "success");
+  });
+}
+
+function removeDeveloper(username) {
+  if (!confirm("Remove " + username + "?")) return;
+  var newList = [];
+  for (var i = 0; i < DB.developers.length; i++) {
+    if (DB.developers[i].username !== username) newList.push(DB.developers[i]);
+  }
+  DB.developers = newList;
+  deleteDev(username, function() {
+    renderAdminPanel();
+    showToast("✓ Developer removed", "success");
+  });
+}
+
+// ════════════════════════════════════════
+// EDIT MODAL
+// ════════════════════════════════════════
+var editSkills = [];
+
+function openEditModal(username) {
+  var dev = getDev(username);
+  if (!dev) return;
+  document.getElementById("edit-target-user").value = username;
+  document.getElementById("edit-username").value = dev.username;
+  document.getElementById("edit-password").value = "";
+  document.getElementById("edit-skill-input").value = "";
+  editSkills = dev.skills ? dev.skills.slice() : [];
+  renderEditSkills();
+  document.getElementById("edit-modal").classList.add("open");
+}
+
+function renderEditSkills() {
+  var container = document.getElementById("edit-skills-list");
+  if (editSkills.length === 0) {
+    container.innerHTML = '<span style="font-size:11px;color:var(--muted)">No skills yet.</span>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < editSkills.length; i++) {
+    html += '<span class="skill-tag-removable">' + editSkills[i] + '<span class="skill-remove" onclick="removeEditSkill(' + i + ')">✕</span></span>';
+  }
+  container.innerHTML = html;
+}
+
+function addEditSkill() {
+  var input = document.getElementById("edit-skill-input");
+  var skill = input.value.trim();
+  if (!skill) return;
+  for (var i = 0; i < editSkills.length; i++) { if (editSkills[i] === skill) return; }
+  editSkills.push(skill);
+  input.value = "";
+  renderEditSkills();
+}
+
+function removeEditSkill(index) {
+  editSkills.splice(index, 1);
+  renderEditSkills();
+}
+
+function closeEditModal() {
+  document.getElementById("edit-modal").classList.remove("open");
+}
+
+function confirmEdit() {
+  var originalUsername = document.getElementById("edit-target-user").value;
+  var newUsername = document.getElementById("edit-username").value.trim();
+  var newPass = document.getElementById("edit-password").value;
+  if (!newUsername) { showToast("Username cannot be empty", "error"); return; }
+  if (newUsername !== originalUsername && getDev(newUsername)) { showToast("Username already exists", "error"); return; }
+  var dev = getDev(originalUsername);
+  if (!dev) return;
+  var oldUsername = dev.username;
+  dev.username = newUsername;
+  if (newPass) dev.password = newPass;
+  dev.skills = editSkills.slice();
+  if (newUsername !== oldUsername) {
+    deleteDev(oldUsername, function() {
+      saveDev(dev, function() {
+        if (oldUsername === currentUser.username) {
+          currentUser = dev;
+          sessionStorage.setItem("dl_user", newUsername);
+          document.getElementById("topbar-username").textContent = newUsername;
+        }
+        closeEditModal();
+        renderAdminPanel();
+        showToast("✓ Developer updated", "success");
+      });
+    });
+  } else {
+    saveDev(dev, function() {
+      if (oldUsername === currentUser.username) {
+        currentUser = dev;
+        document.getElementById("topbar-username").textContent = newUsername;
+      }
+      closeEditModal();
+      renderAdminPanel();
+      showToast("✓ Developer updated", "success");
+    });
+  }
+}
+
+// ════════════════════════════════════════
+// STATS TAB
+// ════════════════════════════════════════
+function renderStats() {
+  var tbody = document.getElementById("stats-list");
+  var devs = DB.developers.slice();
+  if (devs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No developers yet.</div></td></tr>';
+    return;
+  }
+  var html = "";
+  for (var i = 0; i < devs.length; i++) {
+    var dev = devs[i];
+    var rank = dev.rank || "Crew Junior";
+    var comms = dev.comms || 0;
+    var violations = dev.violations || 0;
+    var clients = dev.clients || 0;
+    var rankOpts = "";
+    for (var r = 0; r < RANKS.length; r++) {
+      rankOpts += '<option value="' + RANKS[r] + '"' + (rank === RANKS[r] ? ' selected' : '') + '>' + RANKS[r] + '</option>';
+    }
+    var rankColor = RANK_COLORS[rank] || "#6b7280";
+    var violColor = violations > 0 ? '#ef4444' : 'var(--text)';
+    var clientsHtml = '<div style="display:flex;align-items:center;gap:8px"><button class="counter-btn" onclick="updateCounter(\'' + dev.username + '\',\'clients\',-1)">−</button><span style="min-width:28px;text-align:center">' + clients + '</span><button class="counter-btn" onclick="updateCounter(\'' + dev.username + '\',\'clients\',1)">+</button></div>';
+    html += '<tr>'
+      + '<td style="font-weight:500">' + dev.username + (dev.isAdmin ? ' <span style="color:var(--accent);font-size:10px">(admin)</span>' : '') + '</td>'
+      + '<td><select onchange="updateRank(\'' + dev.username + '\',this.value)" style="background:var(--surface2);color:' + rankColor + ';border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-family:\'DM Mono\',monospace;font-size:11px;cursor:pointer;outline:none">' + rankOpts + '</select></td>'
+      + '<td><div style="display:flex;align-items:center;gap:8px"><button class="counter-btn" onclick="updateCounter(\'' + dev.username + '\',\'comms\',-1)">−</button><span style="min-width:28px;text-align:center">' + comms + '</span><button class="counter-btn" onclick="updateCounter(\'' + dev.username + '\',\'comms\',1)">+</button></div></td>'
+      + '<td>' + clientsHtml + '</td>'
+      + '<td><div style="display:flex;align-items:center;gap:8px"><button class="counter-btn" onclick="updateCounter(\'' + dev.username + '\',\'violations\',-1)">−</button><span style="min-width:28px;text-align:center;color:' + violColor + '">' + violations + '</span><button class="counter-btn" onclick="updateCounter(\'' + dev.username + '\',\'violations\',1)">+</button></div></td>'
+      + '<td style="text-align:right"><button class="btn-ghost" onclick="resetStats(\'' + dev.username + '\')">reset</button></td>'
+      + '</tr>';
+  }
+  tbody.innerHTML = html;
+}
+
+function updateRank(username, rank) {
+  var dev = getDev(username);
+  if (!dev) return;
+  var oldRank = dev.rank || "Crew Junior";
+  dev.rank = rank;
+  addLog(username + " promoted from " + oldRank + " → " + rank, "blue");
+  saveDev(dev, function() { showToast("✓ Rank updated", "success"); });
+}
+
+function updateCounter(username, field, delta) {
+  var dev = getDev(username);
+  if (!dev) return;
+  var current = parseInt(dev[field]) || 0;
+  dev[field] = Math.max(0, current + delta);
+  var labels = { comms: "comm", clients: "client brought", violations: "violation" };
+  if (delta > 0) addLog(username + " +1 " + (labels[field]||field), field === "violations" ? "red" : "accent");
+  saveDev(dev, function() { renderStats(); showToast("✓ Saved", "success"); });
+}
+
+function resetStats(username) {
+  if (!confirm("Reset all stats for " + username + "?")) return;
+  var dev = getDev(username);
+  if (!dev) return;
+  dev.rank = "Crew Junior";
+  dev.comms = 0;
+  dev.violations = 0;
+  dev.clients = 0;
+  saveDev(dev, function() { renderStats(); showToast("✓ Stats reset", "success"); });
+}
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+var toastTimer = null;
+function showToast(msg, type) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (type ? " " + type : "");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.className = "toast"; }, 3000);
+}
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+function init() {
+  // Testar se Firebase está bloqueado
+  var testImg = new Image();
+  testImg.onload = function() { startApp(); };
+  testImg.onerror = function() {
+    // Firebase pode ainda funcionar mesmo se a imagem falhar
+    // Tentamos ligar mesmo assim
+    startApp();
+  };
+  // Tentar carregar um recurso do Firebase para detetar adblock
+  fetch("https://firestore.googleapis.com/", { mode: "no-cors" })
+    .then(function() { /* ok */ })
+    .catch(function() {
+      document.getElementById("adblock-overlay").style.display = "flex";
+      return;
+    });
+  startApp();
+}
+
+function startApp() {
+  loadDB(function() {
+    loadLog(function() {
+    var saved = sessionStorage.getItem("dl_user");
+    if (saved) {
+      var dev = getDev(saved);
+      if (dev) {
+        currentUser = dev;
+        showMainPage();
+        return;
+      }
+    }
+    document.getElementById("login-page").classList.add("active");
+    });
+  });
+}
+
+init();
+</script>
+</body>
+</html>
